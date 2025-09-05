@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TG Cloud Browser</title>
+</head>
+<body>
+<h2>Cloud Browser (WebRTC)</h2>
+<video id="video" autoplay playsinline style="width:100%; max-width:1200px; border:1px solid #333;"></video>
+<input id="input" placeholder="Type and Enter" style="width:300px; margin-top:10px;" />
+<button id="gotoBtn">Open URL</button>
+
+<script>
+const video = document.getElementById("video");
+const input = document.getElementById("input");
+const gotoBtn = document.getElementById("gotoBtn");
+
+const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host);
+const pc = new RTCPeerConnection();
+
+pc.ontrack = (event) => { video.srcObject = event.streams[0]; };
+
+pc.onicecandidate = (event) => {
+  if(event.candidate) ws.send(JSON.stringify({ type:"ice", candidate:event.candidate }));
+};
+
+ws.onopen = async () => {
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  ws.send(JSON.stringify({ type:"offer", offer }));
+};
+
+ws.onmessage = async (msg) => {
+  const data = JSON.parse(msg.data);
+  if(data.type === "answer") await pc.setRemoteDescription(data.answer);
+  else if(data.type === "ice" && data.candidate) await pc.addIceCandidate(data.candidate);
+};
+
+video.addEventListener("click", (e) => {
+  const rect = video.getBoundingClientRect();
+  const scaleX = video.videoWidth / rect.width;
+  const scaleY = video.videoHeight / rect.height;
+  const x = Math.round((e.clientX - rect.left) * scaleX);
+  const y = Math.round((e.clientY - rect.top) * scaleY);
+  ws.send(JSON.stringify({ type:"click", x, y }));
+});
+
+input.addEventListener("keydown", (e) => {
+  if(e.key === "Enter"){
+    ws.send(JSON.stringify({ type:"type", text:e.target.value }));
+    e.target.value = "";
+  }
+});
+
+gotoBtn.addEventListener("click", () => {
+  const url = prompt("Enter URL", "https://www.instagram.com");
+  if(url) ws.send(JSON.stringify({ type:"goto", url }));
+});
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TG Cloud Browser</title>
+</head>
+<body>
+<h2>Cloud Browser (WebRTC)</h2>
+<video id="video" autoplay playsinline style="width:100%; max-width:1200px; border:1px solid #333;"></video>
+<input id="input" placeholder="Type and Enter" style="width:300px; margin-top:10px;" />
+<button id="gotoBtn">Open URL</button>
+
+<script>
+const video = document.getElementById("video");
+const input = document.getElementById("input");
+const gotoBtn = document.getElementById("gotoBtn");
+
+const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host);
+const pc = new RTCPeerConnection();
+
+pc.ontrack = (event) => { video.srcObject = event.streams[0]; };
+
+pc.onicecandidate = (event) => {
+  if(event.candidate) ws.send(JSON.stringify({ type:"ice", candidate:event.candidate }));
+};
+
+ws.onopen = async () => {
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  ws.send(JSON.stringify({ type:"offer", offer }));
+};
+
+ws.onmessage = async (msg) => {
+  const data = JSON.parse(msg.data);
+  if(data.type === "answer") await pc.setRemoteDescription(data.answer);
+  else if(data.type === "ice" && data.candidate) await pc.addIceCandidate(data.candidate);
+};
+
+video.addEventListener("click", (e) => {
+  const rect = video.getBoundingClientRect();
+  const scaleX = video.videoWidth / rect.width;
+  const scaleY = video.videoHeight / rect.height;
+  const x = Math.round((e.clientX - rect.left) * scaleX);
+  const y = Math.round((e.clientY - rect.top) * scaleY);
+  ws.send(JSON.stringify({ type:"click", x, y }));
+});
+
+input.addEventListener("keydown", (e) => {
+  if(e.key === "Enter"){
+    ws.send(JSON.stringify({ type:"type", text:e.target.value }));
+    e.target.value = "";
+  }
+});
+
+gotoBtn.addEventListener("click", () => {
+  const url = prompt("Enter URL", "https://www.instagram.com");
+  if(url) ws.send(JSON.stringify({ type:"goto", url }));
+});
+</script>
+</body>
+</html>
